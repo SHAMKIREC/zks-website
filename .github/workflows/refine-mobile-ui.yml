@@ -1,0 +1,87 @@
+name: Refine mobile UI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/refine-mobile-ui.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Apply visual refinements
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          # Sharper pine background for the home page from a larger existing source photo.
+          s = s.replace("#home{background-image:url('assets/EQDM-Mqqg2svb2JYibZxF.jpeg')}", "#home{background-image:url('assets/54pO9Qm7hQaEDogAWE1zn.jpeg');background-position:center 38%}")
+
+          # Make the main catalog CTA readable on green.
+          s = s.replace('🌲 Смотреть каталог', '↗ Смотреть каталог')
+
+          # Fix bottom More button: the global document click handler used to close it immediately.
+          s = s.replace('<button onclick="menu()"><b>⋮</b>Ещё</button>', '<button class="moreBottom" onclick="event.stopPropagation();menu()"><b>⋮</b>Ещё</button>')
+
+          # Upgrade partnership page with NRV DIGITAL as developer and technical partner.
+          partnership = '''<section id="partnership" class="page"><div class="shell"><div class="container"><div class="sectionHead glass"><h2>Партнёры проекта</h2><p>Компании, которые участвуют в развитии, поддержке и цифровой инфраструктуре «Зелёного Контракта».</p></div><div class="partnerGrid"><article class="partnerCard glass"><div class="partnerMark">NRV</div><div><span class="tag">Разработка • IT-партнёр</span><h3>NRV DIGITAL</h3><p>Разработка и дальнейшее техническое сопровождение сайта «Зелёный Контракт»: интерфейс, мобильная версия, обновления, автоматизация, интеграции и цифровые решения.</p><div class="partnerFacts"><span>⚙️ Разработка сайта</span><span>🛠 Поддержка и обновления</span><span>🤖 Автоматизация</span><span>🌐 Digital-решения</span></div><a class="btn primary partnerBtn" href="https://nrv-digital-site.vercel.app" target="_blank" rel="noopener">Открыть NRV DIGITAL</a></div></article></div></div></div></section>'''
+          s = re.sub(r'<section id="partnership" class="page">.*?</section>', partnership, s, flags=re.S)
+
+          # Add developer credit above copyright without duplicating it on reruns.
+          if 'siteCredit' not in s:
+              s = s.replace('<div class="copyright">', '<div class="siteCredit glass"><span><b>Разработка и техническое сопровождение</b><br>NRV DIGITAL — digital-партнёр «Зелёного Контракта»</span><a href="https://nrv-digital-site.vercel.app" target="_blank" rel="noopener">NRV DIGITAL ↗</a></div><div class="copyright">')
+
+          css = r'''
+/* --- Mobile visual refinement v3 --- */
+#home{background-size:cover!important;background-repeat:no-repeat!important}
+.page{isolation:isolate}
+.page:before{background:linear-gradient(180deg,rgba(2,12,7,.22),rgba(3,15,9,.46) 46%,rgba(2,13,8,.72))}
+.glass{background:linear-gradient(145deg,rgba(8,35,21,.72),rgba(5,23,14,.52));border-color:rgba(194,255,217,.22);box-shadow:0 18px 50px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,255,255,.07)}
+.card{box-shadow:0 18px 45px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.06);border:1px solid rgba(197,255,219,.2)}
+.product img,.photo img{image-rendering:auto;filter:saturate(1.04) contrast(1.03)}
+.product img{aspect-ratio:4/3;height:auto!important;object-fit:cover;object-position:center}
+.photo img{aspect-ratio:16/10;height:auto!important;object-fit:cover}
+.tools{border:1px solid rgba(190,255,214,.25);box-shadow:0 16px 44px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.05);background:linear-gradient(145deg,rgba(8,36,22,.78),rgba(4,20,12,.68))}
+.tools input,.tools select{min-height:56px;background:rgba(2,16,9,.76);border:1px solid rgba(201,255,220,.24);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.04);font-weight:650}
+.tools input::placeholder{color:rgba(255,255,255,.58);opacity:1}
+.tools input:focus,.tools select:focus{border-color:rgba(74,222,128,.75);box-shadow:0 0 0 3px rgba(34,197,94,.14)}
+.primary{color:#fff!important;text-shadow:0 1px 1px rgba(0,0,0,.22);background:linear-gradient(145deg,#22b85a,#0d7b3a);border-color:rgba(132,255,176,.42);box-shadow:0 10px 24px rgba(6,102,47,.32),inset 0 1px 0 rgba(255,255,255,.28)}
+.ghost{background:linear-gradient(145deg,rgba(9,38,23,.88),rgba(4,20,12,.76));border-color:rgba(212,255,226,.26);box-shadow:0 10px 24px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.07)}
+.partnerGrid{max-width:860px;margin:0 auto}.partnerCard{display:grid;grid-template-columns:130px 1fr;gap:24px;padding:26px;border-radius:26px;align-items:start}.partnerMark{width:130px;height:130px;border-radius:28px;display:grid;place-items:center;font-size:36px;font-weight:1000;letter-spacing:-.08em;color:#b9ffcb;background:radial-gradient(circle at 30% 20%,rgba(50,205,96,.42),rgba(7,42,23,.9));border:1px solid rgba(157,255,191,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 18px 40px rgba(0,0,0,.28)}.partnerCard h3{font-size:30px;margin:4px 0 10px}.partnerCard p{color:rgba(255,255,255,.82);line-height:1.65}.partnerFacts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:18px 0}.partnerFacts span{padding:11px 12px;border-radius:13px;background:rgba(255,255,255,.065);border:1px solid rgba(255,255,255,.1);font-size:13px;font-weight:750}.partnerBtn{width:max-content}.siteCredit{margin-top:28px;padding:16px 18px;border-radius:18px;display:flex;align-items:center;justify-content:space-between;gap:15px;font-size:12px;color:rgba(255,255,255,.72)}.siteCredit b{color:#fff}.siteCredit a{padding:10px 13px;border-radius:12px;background:linear-gradient(145deg,#1da650,#0d7135);font-weight:900;color:#fff;white-space:nowrap}
+@media(max-width:760px){
+  header{background:linear-gradient(180deg,rgba(3,20,11,.97),rgba(4,24,14,.9))}
+  .head{min-height:78px}.brand img{width:52px;height:52px;border-radius:11px}.brand strong{font-size:16px;letter-spacing:.01em}.brand small{font-size:10px}
+  main{padding-top:78px}.mobileMenu{top:78px;left:10px;right:10px;border-radius:0 0 24px 24px;max-height:calc(100dvh - 165px);overflow:auto;padding:10px}.mobileMenu button,.mobileMenu a{min-height:54px;padding:14px 15px;margin:6px 0;border-radius:15px;background:linear-gradient(145deg,rgba(18,48,31,.96),rgba(8,30,18,.96));box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+  .hero{min-height:calc(100dvh - 78px);padding:26px 0 126px}.heroGrid{gap:18px}.hero h1{font-size:clamp(39px,11vw,48px);line-height:1.02;letter-spacing:-.035em;margin:12px 0 18px}.lead{font-size:17px;line-height:1.58}.actions{display:grid;grid-template-columns:1fr;gap:10px}.actions .btn{width:100%;min-height:58px;font-size:17px}.stats{gap:10px}.stat{min-height:92px;display:grid;align-content:center;border-radius:20px;background:linear-gradient(145deg,rgba(8,38,22,.82),rgba(4,22,13,.68));box-shadow:0 12px 32px rgba(0,0,0,.26),inset 0 1px 0 rgba(255,255,255,.08)}.stat b{font-size:22px}.stat span{font-size:11px}
+  .sectionHead{border-radius:24px;padding:20px 17px}.sectionHead h2{font-size:clamp(30px,9vw,38px);line-height:1.08}.sectionHead p{font-size:15px;line-height:1.55}
+  .tools{padding:13px;border-radius:22px;gap:11px}.tools input,.tools select{font-size:17px;border-radius:15px;padding:14px 16px}
+  .grid{gap:18px}.card{border-radius:25px}.product .pad{padding:21px}.product .pad h3{font-size:26px}.product .pad p{font-size:16px;line-height:1.55}.product .btn{min-height:56px;font-size:16px}.tag{font-size:12px;padding:7px 11px}
+  footer{padding:44px 0 118px}.footerGrid{gap:22px}.footerGrid>div{padding-bottom:6px}.footCopy{font-size:13px;line-height:1.7}.footerLinks{gap:10px}.footerLinks button,.footerLinks a{font-size:14px;min-height:25px}
+  .bottom{left:10px;right:10px;bottom:max(8px,env(safe-area-inset-bottom));padding:7px;gap:5px;border-radius:25px;background:linear-gradient(180deg,rgba(8,33,20,.94),rgba(4,23,13,.97));border:1px solid rgba(176,255,205,.22);box-shadow:0 18px 50px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08)}
+  .bottom button{min-height:62px;color:#eaffef;padding:6px 2px;border-radius:18px;background:linear-gradient(145deg,rgba(22,70,41,.76),rgba(8,38,22,.76));border:1px solid rgba(162,255,194,.13);box-shadow:0 7px 16px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.05);font-size:10px;transition:.18s transform,.18s filter}.bottom button:active{transform:translateY(1px) scale(.98)}.bottom b{font-size:20px}.bottom button.active{color:#fff;background:linear-gradient(145deg,#25b45a,#0d7939);border-color:rgba(170,255,198,.44);box-shadow:0 9px 20px rgba(13,121,57,.38),inset 0 1px 0 rgba(255,255,255,.25)}.bottom button:nth-child(4):not(.active){background:linear-gradient(145deg,rgba(113,74,14,.72),rgba(55,45,18,.76));border-color:rgba(255,192,76,.18)}.bottom .moreBottom:not(.active){background:linear-gradient(145deg,rgba(35,67,46,.82),rgba(10,37,22,.82))}
+  .partnerCard{grid-template-columns:1fr;padding:20px;border-radius:24px}.partnerMark{width:92px;height:92px;border-radius:22px;font-size:28px}.partnerCard h3{font-size:28px}.partnerFacts{grid-template-columns:1fr}.partnerBtn{width:100%}.siteCredit{flex-direction:column;align-items:flex-start}.siteCredit a{width:100%;text-align:center}
+}
+'''
+          if 'Mobile visual refinement v3' not in s:
+              s = s.replace('</style>', css + '\n</style>')
+
+          p.write_text(s, encoding='utf-8')
+      - name: Commit refinements
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "fix: refine catalog, mobile nav, partners and hero background"
+          git push
