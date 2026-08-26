@@ -1,6 +1,9 @@
 /* Interaction hotfixes — loaded after the original script. */
 (()=>{
-  const menuEl=document.getElementById('mobileMenu');
+  const visualStyle=document.createElement('style');
+  visualStyle.textContent=`.product{transition:transform .25s ease,box-shadow .25s ease;border-color:rgba(160,255,190,.2)}.product:hover{transform:translateY(-6px);box-shadow:0 22px 46px rgba(0,0,0,.34),0 0 0 1px rgba(80,220,130,.22)}.product img{transition:transform .35s ease}.product:hover img{transform:scale(1.035)}.tag{letter-spacing:.02em}.tools{box-shadow:0 12px 30px rgba(0,0,0,.18)}@media(max-width:700px){.product:hover{transform:none}.product .pad{gap:8px}}`;
+  document.head.appendChild(visualStyle);
+  const menuEl=document.getElementById('menu');
   const burger=document.getElementById('burger');
   const bottom=document.querySelector('.bottom');
   if(!menuEl||!burger)return;
